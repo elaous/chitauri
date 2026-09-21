@@ -75,20 +75,45 @@ attestation certificates from real GrapheneOS devices.**
 
 ## Setup
 
+Dependencies are managed with [uv](https://docs.astral.sh/uv/) and config
+(the OS allowlist + policy) lives in Postgres instead of a flat file.
+
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+# install uv if you don't have it: https://docs.astral.sh/uv/getting-started/installation/
+uv sync
+
+# start a local Postgres (or point DATABASE_URL at one you already run)
+docker compose up -d postgres
+
+# apply schema migrations
+uv run alembic upgrade head
+
+# bootstrap the DB from config/allowlist.yaml (safe to re-run)
+uv run python scripts/seed_config.py
+
+uv run uvicorn app.main:app --reload
 ```
+
+By default the app connects to
+`postgresql+asyncpg://graphene_attest:graphene_attest@localhost:5432/graphene_attest`
+(matching `docker-compose.yml`). Override with a `DATABASE_URL` env var or a
+`.env` file, e.g. `DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db`.
+
+Run tests with `uv run pytest`.
 
 ## Populating the allowlist
 
-`config/allowlist.yaml` needs real `verifiedBootKey` SHA-256 hashes, one
-entry per supported OS + device + release. GrapheneOS publishes signing key
-fingerprints for each release; there is no public API for this today, so
-maintaining it will initially be a manual/scripted process against their
-release notes and repo. This is the main ongoing maintenance burden of
-running this service — see `docs/background.md`.
+The OS allowlist (`os_profiles` + `verified_boot_keys` tables) needs real
+`verifiedBootKey` SHA-256 hashes, one row per supported OS + device +
+release. GrapheneOS publishes signing key fingerprints for each release;
+there is no public API for this today, so maintaining it will initially be
+a manual/scripted process against their release notes and repo. This is the
+main ongoing maintenance burden of running this service — see
+`docs/background.md`.
+
+`config/allowlist.yaml` is kept as human-editable seed data — edit it and
+re-run `uv run python scripts/seed_config.py` to sync it into Postgres, or
+write directly to the DB/tables for one-off changes.
 
 ## Roadmap
 

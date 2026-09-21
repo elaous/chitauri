@@ -5,11 +5,13 @@ import secrets
 import time
 
 from cryptography import x509
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.attestation import AttestationParseError, parse_leaf_certificate
 from app.chain import validate_chain
 from app.config import get_os_profile, get_policy
+from app.db import get_session
 from app.models import NonceResponse, VerifyRequest, VerifyResult
 
 app = FastAPI(title="graphene-attest", version="0.1.0")
@@ -37,13 +39,13 @@ def _consume_nonce(nonce: str) -> bool:
 
 
 @app.post("/verify", response_model=VerifyResult)
-def verify(req: VerifyRequest) -> VerifyResult:
+async def verify(req: VerifyRequest, db: AsyncSession = Depends(get_session)) -> VerifyResult:
     reasons: list[str] = []
 
     if not _consume_nonce(req.nonce):
         raise HTTPException(400, "Unknown or expired nonce")
 
-    profile = get_os_profile(req.claimed_os)
+    profile = await get_os_profile(db, req.claimed_os)
     if profile is None:
         raise HTTPException(400, f"Unknown claimed_os '{req.claimed_os}'")
 
@@ -65,7 +67,7 @@ def verify(req: VerifyRequest) -> VerifyResult:
     if parsed.challenge.decode(errors="replace") != req.nonce:
         reasons.append("Attestation challenge does not match issued nonce")
 
-    policy = get_policy()
+    policy = await get_policy(db)
     if parsed.security_level_name != policy.get("min_security_level", "TrustedEnvironment") and (
         parsed.attestation_security_level < 1
     ):
