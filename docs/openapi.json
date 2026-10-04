@@ -1,0 +1,756 @@
+{
+  "components": {
+    "schemas": {
+      "AppIntegrity": {
+        "properties": {
+          "appRecognitionVerdict": {
+            "const": "UNEVALUATED",
+            "default": "UNEVALUATED",
+            "title": "Apprecognitionverdict",
+            "type": "string"
+          }
+        },
+        "title": "AppIntegrity",
+        "type": "object"
+      },
+      "Body_import_verified_boot_keys_csv_admin_verified_boot_keys_import_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_verified_boot_keys_csv_admin_verified_boot_keys_import_post",
+        "type": "object"
+      },
+      "DeviceAttestationDetails": {
+        "description": "Extension beyond the Play Integrity shape: the hardware/OS facts this\nproject checks directly from the Key Attestation certificate.",
+        "properties": {
+          "device_locked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Locked"
+          },
+          "os_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Id"
+          },
+          "os_patch_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Patch Level"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "security_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Security Level"
+          },
+          "verdict": {
+            "enum": [
+              "pass",
+              "fail"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          },
+          "verified_boot_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified Boot State"
+          }
+        },
+        "required": [
+          "verdict"
+        ],
+        "title": "DeviceAttestationDetails",
+        "type": "object"
+      },
+      "DeviceIntegrity": {
+        "properties": {
+          "deviceRecognitionVerdict": {
+            "items": {
+              "enum": [
+                "MEETS_DEVICE_INTEGRITY",
+                "MEETS_STRONG_INTEGRITY"
+              ],
+              "type": "string"
+            },
+            "title": "Devicerecognitionverdict",
+            "type": "array"
+          }
+        },
+        "title": "DeviceIntegrity",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ImportResult": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "by_os_id": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Os Id",
+            "type": "object"
+          },
+          "received": {
+            "title": "Received",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "received",
+          "added",
+          "by_os_id"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
+      "NonceResponse": {
+        "properties": {
+          "nonce": {
+            "title": "Nonce",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nonce"
+        ],
+        "title": "NonceResponse",
+        "type": "object"
+      },
+      "OSProfileIn": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "expected_verified_boot_state": {
+            "title": "Expected Verified Boot State",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "require_device_locked": {
+            "default": true,
+            "title": "Require Device Locked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "expected_verified_boot_state"
+        ],
+        "title": "OSProfileIn",
+        "type": "object"
+      },
+      "RequestDetails": {
+        "properties": {
+          "nonce": {
+            "title": "Nonce",
+            "type": "string"
+          },
+          "requestPackageName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requestpackagename"
+          },
+          "timestampMillis": {
+            "title": "Timestampmillis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestampMillis",
+          "nonce"
+        ],
+        "title": "RequestDetails",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VerifiedBootKeyIn": {
+        "properties": {
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "os_id": {
+            "title": "Os Id",
+            "type": "string"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release"
+          },
+          "verified_boot_key_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Verified Boot Key Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "os_id",
+          "verified_boot_key_sha256"
+        ],
+        "title": "VerifiedBootKeyIn",
+        "type": "object"
+      },
+      "VerifyRequest": {
+        "properties": {
+          "cert_chain_b64": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cert Chain B64",
+            "type": "array"
+          },
+          "claimed_os": {
+            "description": "e.g. 'grapheneos' or 'stock_android'",
+            "title": "Claimed Os",
+            "type": "string"
+          },
+          "nonce": {
+            "title": "Nonce",
+            "type": "string"
+          },
+          "request_package_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Package Name"
+          }
+        },
+        "required": [
+          "nonce",
+          "claimed_os",
+          "cert_chain_b64"
+        ],
+        "title": "VerifyRequest",
+        "type": "object"
+      },
+      "VerifyResult": {
+        "properties": {
+          "appIntegrity": {
+            "$ref": "#/components/schemas/AppIntegrity"
+          },
+          "deviceAttestation": {
+            "$ref": "#/components/schemas/DeviceAttestationDetails"
+          },
+          "deviceIntegrity": {
+            "$ref": "#/components/schemas/DeviceIntegrity"
+          },
+          "requestDetails": {
+            "$ref": "#/components/schemas/RequestDetails"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          }
+        },
+        "required": [
+          "requestDetails",
+          "appIntegrity",
+          "deviceIntegrity",
+          "deviceAttestation"
+        ],
+        "title": "VerifyResult",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "An open-source, OS-neutral device integrity attestation API. Response shape mirrors Google's Play Integrity decoded verdict token where possible \u2014 see docs/API.md.",
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title": "graphene-attest",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/admin/os-profiles": {
+      "post": {
+        "operationId": "upsert_os_profile_admin_os_profiles_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-admin-api-key",
+            "required": true,
+            "schema": {
+              "title": "X-Admin-Api-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OSProfileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Upsert Os Profile Admin Os Profiles Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upsert Os Profile",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verified-boot-keys": {
+      "post": {
+        "operationId": "add_verified_boot_key_admin_verified_boot_keys_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-admin-api-key",
+            "required": true,
+            "schema": {
+              "title": "X-Admin-Api-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifiedBootKeyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Verified Boot Key",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verified-boot-keys/bulk": {
+      "post": {
+        "operationId": "add_verified_boot_keys_bulk_admin_verified_boot_keys_bulk_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-admin-api-key",
+            "required": true,
+            "schema": {
+              "title": "X-Admin-Api-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/VerifiedBootKeyIn"
+                },
+                "title": "Keys",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Verified Boot Keys Bulk",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verified-boot-keys/import": {
+      "post": {
+        "operationId": "import_verified_boot_keys_csv_admin_verified_boot_keys_import_post",
+        "parameters": [
+          {
+            "description": "os_id to use for rows that omit the os_id column",
+            "in": "query",
+            "name": "default_os_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "os_id to use for rows that omit the os_id column",
+              "title": "Default Os Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-admin-api-key",
+            "required": true,
+            "schema": {
+              "title": "X-Admin-Api-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_verified_boot_keys_csv_admin_verified_boot_keys_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Verified Boot Keys Csv",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/verified-boot-keys/import/row": {
+      "post": {
+        "description": "Insert a single verified-boot-key record from a raw CSV body: a\nheader line (`os_id,device,release,verified_boot_key_sha256` \u2014 `os_id`\nmay be dropped if `default_os_id` is given) followed by exactly one\ndata row.",
+        "operationId": "import_verified_boot_key_csv_row_admin_verified_boot_keys_import_row_post",
+        "parameters": [
+          {
+            "description": "os_id to use if the row omits the os_id column",
+            "in": "query",
+            "name": "default_os_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "os_id to use if the row omits the os_id column",
+              "title": "Default Os Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-admin-api-key",
+            "required": true,
+            "schema": {
+              "title": "X-Admin-Api-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Verified Boot Key Csv Row",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/nonce": {
+      "post": {
+        "operationId": "issue_nonce_nonce_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NonceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Issue Nonce"
+      }
+    },
+    "/verify": {
+      "post": {
+        "operationId": "verify_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify"
+      }
+    }
+  }
+}

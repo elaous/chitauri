@@ -101,6 +101,11 @@ By default the app connects to
 
 Run tests with `uv run pytest`.
 
+Full API reference (including the admin import endpoints and the
+DynamoDB alternative backend): [`docs/API.md`](docs/API.md). Machine-readable
+schema: [`docs/openapi.json`](docs/openapi.json), or `/docs` on a running
+server.
+
 ## Populating the allowlist
 
 The OS allowlist (`os_profiles` + `verified_boot_keys` tables) needs real
@@ -112,8 +117,10 @@ main ongoing maintenance burden of running this service — see
 `docs/background.md`.
 
 `config/allowlist.yaml` is kept as human-editable seed data — edit it and
-re-run `uv run python scripts/seed_config.py` to sync it into Postgres, or
-write directly to the DB/tables for one-off changes.
+re-run `uv run python scripts/seed_config.py` to sync it into the configured
+backend. For adding keys afterward (e.g. a new GrapheneOS release) without
+touching the YAML file, see **Importing allowlist data** in
+[`docs/API.md`](docs/API.md) for the admin JSON/CSV import endpoints and CLI.
 
 ## Roadmap
 
@@ -127,8 +134,15 @@ write directly to the DB/tables for one-off changes.
       generate the attestation key
 - [ ] Threat model doc: replay, key extraction, downgrade attacks
 
+## Contributing
+
+See `CONTRIBUTING.md` for development setup and `CODE_OF_CONDUCT.md` for
+community guidelines. Found a security issue? See `SECURITY.md` instead of
+opening a public issue.
+
 ## License
 
-MIT — see `LICENSE`. (Consider AGPL-3.0 instead if you want to guarantee
-that hosted forks of this service also stay open — worth deciding before
-your first real deployment.)
+Apache License 2.0 — see `LICENSE` and `NOTICE`. Apache-2.0 was chosen over
+MIT/BSD specifically so that device OEMs and OS vendors (GrapheneOS,
+Motorola, etc.) adopting or extending this service get an explicit patent
+grant alongside the copyright license.

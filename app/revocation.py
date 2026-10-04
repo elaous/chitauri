@@ -13,7 +13,7 @@ import time
 
 import httpx
 
-from app.config import GOOGLE_REVOCATION_LIST_URL
+from app.constants import GOOGLE_REVOCATION_LIST_URL
 
 _cache: dict = {"data": None, "fetched_at": 0.0}
 _CACHE_TTL_SECONDS = 3600
