@@ -93,6 +93,22 @@ def test_single_json_insert_unknown_os_id(client):
     assert resp.status_code == 400
 
 
+def test_bulk_json_insert_rejects_whole_batch_if_any_os_id_unknown(client, store):
+    """Regression test: a batch spanning a known and an unknown os_id used
+    to write the known os_id's keys before failing on the unknown one, so
+    the 400 response didn't actually mean "nothing happened"."""
+    resp = client.post(
+        "/admin/verified-boot-keys/bulk",
+        headers=AUTH,
+        json=[
+            {"os_id": "grapheneos", "verified_boot_key_sha256": SHA},
+            {"os_id": "nonexistent", "verified_boot_key_sha256": SHA2},
+        ],
+    )
+    assert resp.status_code == 400
+    assert store.profiles["grapheneos"].verified_boot_keys == []
+
+
 def test_bulk_json_insert_dedupes(client, store):
     resp = client.post(
         "/admin/verified-boot-keys/bulk",

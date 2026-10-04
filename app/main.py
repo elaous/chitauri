@@ -6,7 +6,10 @@ import secrets
 import time
 
 from cryptography import x509
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.admin import router as admin_router
 from app.attestation import AttestationParseError, parse_leaf_certificate
@@ -20,6 +23,8 @@ from app.models import (
     VerifyRequest,
     VerifyResult,
 )
+from app.rate_limit import limiter
+from app.settings import settings
 from app.storage import ConfigStore, get_store
 
 app = FastAPI(
@@ -35,6 +40,9 @@ app = FastAPI(
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
     },
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 app.include_router(admin_router)
 
 # In-memory nonce store for this scaffold. Replace with Redis/DB + short TTL
@@ -46,7 +54,8 @@ PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []  # TODO: load pinned root certs
 
 
 @app.post("/nonce", response_model=NonceResponse)
-def issue_nonce() -> NonceResponse:
+@limiter.limit(settings.rate_limit_nonce)
+def issue_nonce(request: Request) -> NonceResponse:
     nonce = secrets.token_urlsafe(24)
     _issued_nonces[nonce] = time.time()
     return NonceResponse(nonce=nonce)
@@ -71,7 +80,10 @@ def _device_recognition_verdict(
 
 
 @app.post("/verify", response_model=VerifyResult)
-async def verify(req: VerifyRequest, store: ConfigStore = Depends(get_store)) -> VerifyResult:
+@limiter.limit(settings.rate_limit_verify)
+async def verify(
+    request: Request, req: VerifyRequest, store: ConfigStore = Depends(get_store)
+) -> VerifyResult:
     reasons: list[str] = []
     request_details = RequestDetails(
         requestPackageName=req.request_package_name,
@@ -120,7 +132,7 @@ async def verify(req: VerifyRequest, store: ConfigStore = Depends(get_store)) ->
     ):
         reasons.append(f"Security level too low: {parsed.security_level_name}")
 
-    if parsed.device_locked is not True:
+    if profile.require_device_locked and parsed.device_locked is not True:
         reasons.append("Bootloader is not locked")
 
     if parsed.verified_boot_state_name != profile.expected_verified_boot_state:

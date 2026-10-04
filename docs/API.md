@@ -154,6 +154,32 @@ target `os_id` and returns how many of the submitted rows were actually new:
 There's also a CLI for operators with direct DB/AWS access who'd rather
 skip the HTTP API — `uv run python scripts/import_verified_boot_keys.py --help`.
 
+Every `/admin/verified-boot-keys*` call writes `os_id`s only after first
+confirming *every* `os_id` in the batch already exists — a batch covering
+one known and one unknown `os_id` fails the whole request with no partial
+write, rather than silently persisting the known one.
+
+## Rate limiting
+
+All endpoints are rate-limited per client IP via
+[slowapi](https://github.com/laurentS/slowapi) (`app/rate_limit.py`).
+Exceeding a limit returns `429 Too Many Requests`. Defaults (overridable via
+env vars, see `app/settings.py`):
+
+| Endpoint(s) | Setting | Default |
+|---|---|---|
+| `POST /nonce` | `RATE_LIMIT_NONCE` | `20/minute` |
+| `POST /verify` | `RATE_LIMIT_VERIFY` | `20/minute` |
+| `POST /admin/*` (all five, shared) | `RATE_LIMIT_ADMIN` | `30/minute` |
+
+`/nonce` and `/verify` are public and unauthenticated, so this is the main
+abuse control for them. `/admin/*` is already gated by `ADMIN_API_KEY`, but
+is rate-limited too as defense in depth against a leaked or guessed key —
+notably, the limit is enforced via a dependency that always runs *before*
+the API-key check (`app/rate_limit.py`'s `enforce()`, not the usual
+`@limiter.limit` decorator), so repeated wrong-key attempts count against
+the limit instead of being rejected for free.
+
 ## Storage backends
 
 Config (OS profiles, verified boot keys, policy) is read/written through

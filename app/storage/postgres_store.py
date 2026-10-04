@@ -5,12 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db_models import OSProfile, PolicySetting, VerifiedBootKey
-from app.storage.base import ConfigValidationError, OSProfileData, VerifiedBootKeyData
-
-_POLICY_TYPES: dict[str, type] = {
-    "max_patch_age_days": int,
-    "min_security_level": str,
-}
+from app.storage.base import POLICY_TYPES, ConfigValidationError, OSProfileData, VerifiedBootKeyData
 
 
 def _to_profile_data(profile: OSProfile) -> OSProfileData:
@@ -107,7 +102,7 @@ class PostgresConfigStore:
         rows = (await self._session.execute(select(PolicySetting))).scalars().all()
         policy: dict[str, str] = {}
         for row in rows:
-            cast = _POLICY_TYPES.get(row.key, str)
+            cast = POLICY_TYPES.get(row.key, str)
             policy[row.key] = cast(row.value)
         return policy
 

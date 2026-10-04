@@ -13,6 +13,13 @@ from typing import Protocol, runtime_checkable
 
 SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
 
+# Known policy keys and how to coerce their stored (string) value. Shared by
+# every ConfigStore backend so they stay in sync.
+POLICY_TYPES: dict[str, type] = {
+    "max_patch_age_days": int,
+    "min_security_level": str,
+}
+
 
 class ConfigValidationError(ValueError):
     """Raised when data handed to a ConfigStore fails basic shape/format checks."""

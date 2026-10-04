@@ -27,5 +27,15 @@ class Settings(BaseSettings):
     admin_import_max_rows: int = 10_000
     admin_import_max_file_bytes: int = 10_000_000
 
+    # --- Rate limiting (app/rate_limit.py) ---
+    # Per-client-IP, "<count>/<period>" as accepted by the `limits` library
+    # (e.g. "20/minute", "5/second"). /nonce and /verify are public and
+    # unauthenticated, so rate limiting them is the main abuse control.
+    # /admin/* is also limited despite requiring an API key, as defense in
+    # depth against a leaked/guessed key.
+    rate_limit_nonce: str = "20/minute"
+    rate_limit_verify: str = "20/minute"
+    rate_limit_admin: str = "30/minute"
+
 
 settings = Settings()

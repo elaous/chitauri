@@ -21,17 +21,21 @@ not the hot `/verify` path data itself) that's a fine trade-off.
 from __future__ import annotations
 
 import asyncio
-from functools import partial
+from functools import lru_cache, partial
 from typing import Any
 
 import boto3
 
-from app.storage.base import ConfigValidationError, OSProfileData, VerifiedBootKeyData
+from app.storage.base import POLICY_TYPES, ConfigValidationError, OSProfileData, VerifiedBootKeyData
 
-_POLICY_TYPES: dict[str, type] = {
-    "max_patch_age_days": int,
-    "min_security_level": str,
-}
+
+@lru_cache(maxsize=None)
+def _get_resource(region_name: str | None, endpoint_url: str | None):
+    """Building a boto3 resource sets up a session/credential chain —
+    cache it per (region, endpoint) rather than reconstructing it on every
+    request, since DynamoDBConfigStore is instantiated fresh per request by
+    app.storage.factory.get_store()."""
+    return boto3.resource("dynamodb", region_name=region_name, endpoint_url=endpoint_url)
 
 
 def _item_to_profile_data(item: dict[str, Any]) -> OSProfileData:
@@ -61,9 +65,7 @@ class DynamoDBConfigStore:
         region_name: str | None = None,
         endpoint_url: str | None = None,
     ) -> None:
-        resource = boto3.resource(
-            "dynamodb", region_name=region_name, endpoint_url=endpoint_url
-        )
+        resource = _get_resource(region_name, endpoint_url)
         self._os_profiles = resource.Table(f"{table_prefix}os_profiles")
         self._policy_settings = resource.Table(f"{table_prefix}policy_settings")
 
@@ -138,7 +140,7 @@ class DynamoDBConfigStore:
         resp = await self._run(self._policy_settings.scan)
         policy: dict[str, str] = {}
         for item in resp.get("Items", []):
-            cast = _POLICY_TYPES.get(item["key"], str)
+            cast = POLICY_TYPES.get(item["key"], str)
             policy[item["key"]] = cast(item["value"])
         return policy
 
