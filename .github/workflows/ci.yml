@@ -5,9 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -29,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -41,5 +51,10 @@ jobs:
       - name: Apply migrations
         run: uv run alembic upgrade head
 
-      - name: Run tests
+      - name: Run targeted tests
+        if: github.event_name == 'pull_request'
+        run: python3 scripts/run_targeted_tests.py --base "origin/${{ github.base_ref }}"
+
+      - name: Run full test suite
+        if: github.event_name == 'push'
         run: uv run pytest -q
