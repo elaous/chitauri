@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -53,7 +53,9 @@ jobs:
 
       - name: Run targeted tests
         if: github.event_name == 'pull_request'
-        run: python3 scripts/run_targeted_tests.py --base "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 scripts/run_targeted_tests.py --base "origin/$BASE_REF"
 
       - name: Run full test suite
         if: github.event_name == 'push'

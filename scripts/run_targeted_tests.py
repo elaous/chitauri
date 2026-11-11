@@ -22,33 +22,44 @@ FULL_SUITE_EXACT = {
     "app/models.py",
     "app/db.py",
     "app/db_models.py",
+    "app/rate_limit.py",
+    "app/chain.py",
+    "app/revocation.py",
+    "app/admin.py",
+    "app/import_utils.py",
     "app/storage/__init__.py",
     "app/storage/base.py",
     "app/storage/factory.py",
     "tests/conftest.py",
     "tests/fakes.py",
 }
-FULL_SUITE_PREFIXES = ("config/", "migrations/")
+FULL_SUITE_PREFIXES = ("config/", "migrations/", ".github/")
+FULL_SUITE_EXACT.add("scripts/run_targeted_tests.py")
+IGNORED_PREFIXES = ("docs/",)
+IGNORED_SUFFIXES = (".md",)
 
 EXPLICIT_MAP = {
     "app/attestation.py": ["tests/test_attestation.py", "tests/test_verify_device_locked.py"],
     "app/storage/dynamodb_store.py": ["tests/test_storage_dynamodb.py"],
     "app/storage/postgres_store.py": ["tests/test_storage_postgres.py"],
-    "app/chain.py": ["tests/test_attestation.py"],
-    "app/revocation.py": ["tests/test_attestation.py"],
     "scripts/import_verified_boot_keys.py": ["tests/test_import_utils.py"],
 }
 
 
 def changed_files(base):
     out = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", "diff", "--name-only", "-z", f"{base}...HEAD"],
         cwd=REPO_ROOT,
         check=True,
         capture_output=True,
         text=True,
     ).stdout
-    return [line for line in out.splitlines() if line]
+    return [name for name in out.split("\0") if name]
+
+
+def is_test_module(path):
+    name = Path(path).name
+    return path.startswith("tests/") and name.startswith("test_") and name.endswith(".py")
 
 
 def select_tests(files):
@@ -57,16 +68,20 @@ def select_tests(files):
     for path in files:
         if path in FULL_SUITE_EXACT or path.startswith(FULL_SUITE_PREFIXES):
             return None
-        if path.startswith("tests/") and path.endswith(".py"):
+        if path.startswith(IGNORED_PREFIXES) or path.endswith(IGNORED_SUFFIXES):
+            continue
+        if is_test_module(path) and path.count("/") == 1:
             if (REPO_ROOT / path).exists():
                 selected.add(path)
-            continue
-        if path in EXPLICIT_MAP:
+        elif path in EXPLICIT_MAP:
             selected.update(EXPLICIT_MAP[path])
-        elif path.startswith("app/") and path.endswith(".py"):
+        elif path.startswith("app/") and path.endswith(".py") and path.count("/") == 1:
             candidate = f"tests/test_{Path(path).stem}.py"
-            if (REPO_ROOT / candidate).exists():
-                selected.add(candidate)
+            if not (REPO_ROOT / candidate).exists():
+                return None
+            selected.add(candidate)
+        else:
+            return None
     return sorted(t for t in selected if (REPO_ROOT / t).exists())
 
 

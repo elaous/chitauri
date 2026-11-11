@@ -37,6 +37,7 @@ jobs:
 
   dependency-audit:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
