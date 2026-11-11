@@ -1,16 +1,4 @@
-# Allowlist of known-good `verifiedBootKey` hashes (SHA-256, hex), one entry
-# per OS + supporting notes. These are PLACEHOLDERS — you must populate real
-# values by:
-#   1. Installing GrapheneOS on a supported device
-#   2. Generating an attestation key and reading the RootOfTrust.verifiedBootKey
-#      field back out of the resulting certificate (e.g. via GrapheneOS's own
-#      Auditor app, or this project's own /debug/parse endpoint once tested)
-#   3. Cross-checking against any fingerprints GrapheneOS publishes for that
-#      release in their release notes / repo
-#
-# Do not trust a hash you found on a forum without independently verifying it
-# against the OS vendor's own published release material — a wrong entry
-# here means impersonation of that OS becomes trivially accepted.
+# verifiedBootKey SHA-256 allowlist. Placeholders: verify against vendor fingerprints.
 
 os_allowlist:
   - id: grapheneos
@@ -18,9 +6,6 @@ os_allowlist:
     expected_verified_boot_state: "SelfSigned" # relocked with user-generated AVB key
     require_device_locked: true
     verified_boot_keys:
-      # - device: "Pixel 8"
-      #   release: "2026.09.01"
-      #   verified_boot_key_sha256: "REPLACE_ME"
       []
 
   - id: stock_android

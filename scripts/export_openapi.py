@@ -1,7 +1,4 @@
-"""Regenerates docs/openapi.json from the live FastAPI app.
-
-    uv run python scripts/export_openapi.py
-"""
+"""Regenerates docs/openapi.json from the live FastAPI app."""
 from __future__ import annotations
 
 import json

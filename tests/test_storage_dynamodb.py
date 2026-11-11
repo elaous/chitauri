@@ -1,5 +1,4 @@
-"""Exercises DynamoDBConfigStore against a moto-mocked DynamoDB — no real
-AWS access or network needed."""
+"""DynamoDBConfigStore tests against moto-mocked DynamoDB."""
 from __future__ import annotations
 
 import pytest

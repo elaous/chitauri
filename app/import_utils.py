@@ -1,10 +1,4 @@
-"""Shared parsing for the verified-boot-key import paths (HTTP admin
-endpoints in app/admin.py, and the scripts/import_verified_boot_keys.py CLI).
-
-Both CSV and JSON import ultimately produce a list of (os_id, VerifiedBootKeyData)
-pairs grouped by os_id, which app.storage.ConfigStore.add_verified_boot_keys
-can insert directly.
-"""
+"""Shared parsing for verified-boot-key imports (HTTP and CLI)."""
 from __future__ import annotations
 
 import csv
@@ -27,8 +21,7 @@ def group_by_os_id(
 def parse_json_rows(
     records: list[dict], *, default_os_id: str | None = None
 ) -> list[tuple[str, VerifiedBootKeyData]]:
-    """`records` is a list of objects with keys: os_id (optional if
-    `default_os_id` given), device, release, verified_boot_key_sha256."""
+    """Records need verified_boot_key_sha256; os_id may come from default_os_id."""
     rows: list[tuple[str, VerifiedBootKeyData]] = []
     for i, record in enumerate(records):
         os_id = record.get("os_id") or default_os_id
@@ -48,8 +41,7 @@ def parse_json_rows(
 def parse_csv_rows(
     text: str, *, default_os_id: str | None = None
 ) -> list[tuple[str, VerifiedBootKeyData]]:
-    """CSV columns: os_id,device,release,verified_boot_key_sha256 — `os_id`
-    may be omitted from the file entirely if `default_os_id` is given."""
+    """os_id column is optional when default_os_id is given."""
     reader = csv.DictReader(io.StringIO(text))
     if reader.fieldnames is None:
         return []

@@ -45,12 +45,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 app.include_router(admin_router)
 
-# In-memory nonce store for this scaffold. Replace with Redis/DB + short TTL
-# and single-use enforcement before running more than one server process.
+# In-memory nonce store: single process only.
 _issued_nonces: dict[str, float] = {}
 _NONCE_TTL_SECONDS = 300
 
-PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []  # TODO: load pinned root certs at startup
+PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []  # Empty: pinned roots are not loaded yet.
 
 
 @app.post("/nonce", response_model=NonceResponse)
@@ -175,5 +174,5 @@ async def verify(
             os_patch_level=parsed.os_patch_level,
             security_level=parsed.security_level_name,
         ),
-        token=None,  # TODO: issue a signed JWT/PASETO here on pass
+        token=None,  # Token issuance not implemented; always None.
     )

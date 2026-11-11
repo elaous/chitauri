@@ -1,10 +1,4 @@
-"""Storage-backend-agnostic shapes and interface for the config store.
-
-The allowlist/policy config can be persisted in different backends (see
-`postgres_store.py`, `dynamodb_store.py`). Everything above this module
-(app/main.py, app/admin.py) talks only to the `ConfigStore` interface, so
-swapping backends doesn't touch request handling.
-"""
+"""Backend-agnostic shapes and interface for the config store."""
 from __future__ import annotations
 
 import re
@@ -13,8 +7,7 @@ from typing import Protocol, runtime_checkable
 
 SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
 
-# Known policy keys and how to coerce their stored (string) value. Shared by
-# every ConfigStore backend so they stay in sync.
+# Known policy keys and their value types.
 POLICY_TYPES: dict[str, type] = {
     "max_patch_age_days": int,
     "min_security_level": str,
@@ -22,7 +15,7 @@ POLICY_TYPES: dict[str, type] = {
 
 
 class ConfigValidationError(ValueError):
-    """Raised when data handed to a ConfigStore fails basic shape/format checks."""
+    """Raised on malformed ConfigStore input."""
 
 
 @dataclass
@@ -52,7 +45,7 @@ class OSProfileData:
 
 @runtime_checkable
 class ConfigStore(Protocol):
-    """Backend-agnostic interface for reading/writing the allowlist + policy config."""
+    """Storage interface for allowlist and policy config."""
 
     async def get_os_profile(self, os_id: str) -> OSProfileData | None:
         ...
@@ -73,8 +66,7 @@ class ConfigStore(Protocol):
     async def add_verified_boot_keys(
         self, os_id: str, keys: list[VerifiedBootKeyData]
     ) -> int:
-        """Insert `keys` for `os_id`, de-duplicating by hash. Returns the
-        number of keys actually added (an unknown os_id is an error)."""
+        """De-duplicates by hash. Returns count added; unknown os_id errors."""
         ...
 
     async def get_policy(self) -> dict[str, str]:

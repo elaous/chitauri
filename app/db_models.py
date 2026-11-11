@@ -1,12 +1,4 @@
-"""ORM models for the config that used to live in config/allowlist.yaml.
-
-Tables:
-  os_profiles       - one row per supported OS (grapheneos, stock_android, ...)
-  verified_boot_keys - allowlisted verifiedBootKey hashes, one row per
-                        OS + device + release
-  policy_settings   - flat key/value store for policy knobs
-                       (max_patch_age_days, min_security_level, ...)
-"""
+"""ORM models for the allowlist and policy config tables."""
 from __future__ import annotations
 
 from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
@@ -18,7 +10,7 @@ from app.db import Base
 class OSProfile(Base):
     __tablename__ = "os_profiles"
 
-    id: Mapped[str] = mapped_column(String, primary_key=True)  # e.g. "grapheneos"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
     display_name: Mapped[str] = mapped_column(String, nullable=False)
     expected_verified_boot_state: Mapped[str] = mapped_column(String, nullable=False)
     require_device_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

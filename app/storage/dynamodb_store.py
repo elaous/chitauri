@@ -1,23 +1,4 @@
-"""ConfigStore backed by DynamoDB.
-
-Schema (two tables, created by `scripts/create_dynamodb_tables.py`):
-
-  {prefix}os_profiles
-    id (PK, S)             e.g. "grapheneos"
-    display_name (S)
-    expected_verified_boot_state (S)
-    require_device_locked (BOOL)
-    verified_boot_keys (L[M{device, release, verified_boot_key_sha256}])
-
-  {prefix}policy_settings
-    key (PK, S)
-    value (S)
-
-boto3 is synchronous; each call is offloaded to a worker thread via
-`asyncio.to_thread` so the rest of the app can stay async without pulling in
-aiobotocore. For this service's call volume (admin-side config reads/writes,
-not the hot `/verify` path data itself) that's a fine trade-off.
-"""
+"""ConfigStore backed by DynamoDB."""
 from __future__ import annotations
 
 import asyncio
@@ -31,10 +12,7 @@ from app.storage.base import POLICY_TYPES, ConfigValidationError, OSProfileData,
 
 @lru_cache(maxsize=None)
 def _get_resource(region_name: str | None, endpoint_url: str | None):
-    """Building a boto3 resource sets up a session/credential chain —
-    cache it per (region, endpoint) rather than reconstructing it on every
-    request, since DynamoDBConfigStore is instantiated fresh per request by
-    app.storage.factory.get_store()."""
+    """Cached per (region, endpoint): resource construction is costly."""
     return boto3.resource("dynamodb", region_name=region_name, endpoint_url=endpoint_url)
 
 
@@ -56,7 +34,7 @@ def _item_to_profile_data(item: dict[str, Any]) -> OSProfileData:
 
 
 class DynamoDBConfigStore:
-    """ConfigStore backed by DynamoDB (via boto3, run off the event loop)."""
+    """ConfigStore backed by DynamoDB via boto3."""
 
     def __init__(
         self,
@@ -70,6 +48,7 @@ class DynamoDBConfigStore:
         self._policy_settings = resource.Table(f"{table_prefix}policy_settings")
 
     async def _run(self, func, *args, **kwargs):
+        # boto3 is synchronous; run calls off the event loop.
         return await asyncio.to_thread(partial(func, *args, **kwargs))
 
     async def get_os_profile(self, os_id: str) -> OSProfileData | None:

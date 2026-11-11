@@ -94,9 +94,7 @@ def test_single_json_insert_unknown_os_id(client):
 
 
 def test_bulk_json_insert_rejects_whole_batch_if_any_os_id_unknown(client, store):
-    """Regression test: a batch spanning a known and an unknown os_id used
-    to write the known os_id's keys before failing on the unknown one, so
-    the 400 response didn't actually mean "nothing happened"."""
+    """Unknown os_id in a batch must not write any keys."""
     resp = client.post(
         "/admin/verified-boot-keys/bulk",
         headers=AUTH,

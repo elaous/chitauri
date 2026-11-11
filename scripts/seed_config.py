@@ -1,14 +1,4 @@
-"""One-time / re-runnable import of config/allowlist.yaml into the configured
-ConfigStore (Postgres or DynamoDB, via app.settings.storage_backend).
-
-Config used to live only in that YAML file; it's now kept in whichever
-backend is configured (see app/storage/). Run this after provisioning the
-backend's schema (`alembic upgrade head` for Postgres,
-`scripts/create_dynamodb_tables.py` for DynamoDB) to bootstrap it, or to
-re-sync it from the YAML file after hand-editing it.
-
-    uv run python scripts/seed_config.py
-"""
+"""Imports config/allowlist.yaml into the configured ConfigStore."""
 from __future__ import annotations
 
 import asyncio

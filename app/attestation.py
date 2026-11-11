@@ -1,16 +1,4 @@
-"""
-Parses the Android Key Attestation extension (OID 1.3.6.1.4.1.11129.2.1.17)
-out of an X.509 certificate, per the schema documented at
-https://source.android.com/docs/security/keystore/attestation
-
-STATUS: implemented from the published spec, NOT YET VALIDATED against real
-device output. Before trusting this in production, generate real attestation
-certs from a GrapheneOS device (e.g. via GrapheneOS's Auditor app export, or
-a small Android test app) and confirm the parsed fields match. Cross-check
-any disagreement against Google's reference implementation (Apache-2.0):
-https://github.com/google/android-key-attestation (Java/Bouncy Castle) or
-its successor https://github.com/android/keyattestation.
-"""
+"""Android Key Attestation extension parser. Unvalidated against real devices."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -65,15 +53,7 @@ class RootOfTrust(univ.Sequence):
 
 
 def _opt(name: str, tag_number: int, component=None):
-    """Declare an optional, explicitly-tagged schema field. `.subtype()` on
-    an untouched (no value set) schema template is safe and is the normal
-    pyasn1 idiom for this. IMPORTANT PITFALL (see tests/test_attestation.py
-    for the working pattern): calling `.subtype(explicitTag=...)` on an
-    already-*populated* value, instead of on the bare schema template, does
-    NOT just re-tag it — it silently resets the value back to empty. This
-    only matters when hand-constructing synthetic attestation data (e.g. for
-    tests); real certificate parsing only ever decodes, so `parse_leaf_certificate`
-    below is unaffected."""
+    """Optional explicitly-tagged field. Call .subtype() only on untouched templates."""
     component = component if component is not None else univ.Integer()
     return namedtype.OptionalNamedType(
         name, component.subtype(explicitTag=_explicit(tag_number))
@@ -81,9 +61,7 @@ def _opt(name: str, tag_number: int, component=None):
 
 
 class AuthorizationList(univ.Sequence):
-    # Only the tags relevant to OS-integrity verification are decoded with
-    # semantic meaning here; the rest are declared so pyasn1 can skip past
-    # them correctly. Tag numbers per the Android source docs.
+    # Tag numbers per the Android attestation schema.
     componentType = namedtype.NamedTypes(
         _opt("purpose", 1, univ.SetOf(componentType=univ.Integer())),
         _opt("algorithm", 2),
@@ -166,7 +144,6 @@ class AttestationParseError(Exception):
 
 
 def parse_leaf_certificate(der_bytes: bytes) -> ParsedAttestation:
-    """Extract the attestation extension from a leaf certificate's DER bytes."""
     cert = x509.load_der_x509_certificate(der_bytes)
 
     try:

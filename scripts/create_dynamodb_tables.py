@@ -1,10 +1,4 @@
-"""Creates the DynamoDB tables used by DynamoDBConfigStore (app/storage/dynamodb_store.py).
-
-Safe to re-run: skips tables that already exist. Useful both against real
-AWS and against DynamoDB Local / moto for development.
-
-    uv run python scripts/create_dynamodb_tables.py
-"""
+"""Creates DynamoDB tables for DynamoDBConfigStore. Safe to re-run."""
 from __future__ import annotations
 
 import boto3
