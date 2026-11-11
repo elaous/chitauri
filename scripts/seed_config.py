@@ -12,7 +12,7 @@ YAML_PATH = pathlib.Path(__file__).resolve().parent.parent / "config" / "allowli
 
 
 async def seed() -> None:
-    with open(YAML_PATH, "r") as f:
+    with open(YAML_PATH) as f:
         cfg = yaml.safe_load(f)
 
     async for store in get_store():

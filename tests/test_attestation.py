@@ -5,10 +5,8 @@ import pytest
 from pyasn1.codec.der.encoder import encode as der_encode
 
 from app.attestation import (
-    AttestationParseError,
     AuthorizationList,
     KeyDescription,
-    RootOfTrust,
     parse_leaf_certificate,
 )
 

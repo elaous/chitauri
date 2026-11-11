@@ -45,14 +45,17 @@ def validate_chain(
     if len(certs) < 2:
         return ChainValidationResult(False, ["Chain too short"])
 
-    for child, parent in zip(certs, certs[1:]):
+    for child, parent in zip(certs, certs[1:], strict=False):
         if not _verify_signed_by(child, parent):
             reasons.append(
                 f"Signature check failed: {child.subject} not signed by {parent.subject}"
             )
 
     root = certs[-1]
-    if not any(root.public_key().public_numbers() == r.public_key().public_numbers() for r in pinned_roots):
+    if not any(
+        root.public_key().public_numbers() == r.public_key().public_numbers()
+        for r in pinned_roots
+    ):
         reasons.append("Chain does not terminate in a pinned Google hardware root")
 
     return ChainValidationResult(valid=not reasons, reasons=reasons)

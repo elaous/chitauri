@@ -15,7 +15,7 @@ class OSProfile(Base):
     expected_verified_boot_state: Mapped[str] = mapped_column(String, nullable=False)
     require_device_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    verified_boot_keys: Mapped[list["VerifiedBootKey"]] = relationship(
+    verified_boot_keys: Mapped[list[VerifiedBootKey]] = relationship(
         back_populates="os_profile", cascade="all, delete-orphan"
     )
 
@@ -32,7 +32,7 @@ class VerifiedBootKey(Base):
     release: Mapped[str | None] = mapped_column(String, nullable=True)
     verified_boot_key_sha256: Mapped[str] = mapped_column(String, nullable=False)
 
-    os_profile: Mapped["OSProfile"] = relationship(back_populates="verified_boot_keys")
+    os_profile: Mapped[OSProfile] = relationship(back_populates="verified_boot_keys")
 
 
 class PolicySetting(Base):

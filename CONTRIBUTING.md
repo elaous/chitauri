@@ -28,6 +28,8 @@ See `README.md` for the full setup and `docs/API.md` for the API reference.
 
 ## Before opening a PR
 
+- Run `uv run ruff check .` and make sure it is clean; CI runs it on every
+  pull request and on `main`.
 - Run `uv run pytest -q` and make sure it passes. Postgres-backed tests are
   skipped unless a database is reachable (`docker compose up -d postgres`).
 - CI runs only the tests related to your changed files on pull requests, via

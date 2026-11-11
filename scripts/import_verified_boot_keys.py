@@ -11,7 +11,9 @@ from app.storage import ConfigValidationError, VerifiedBootKeyData, get_store
 
 
 def _parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument("--json-file", help="Path to a JSON file (array of records)")
     p.add_argument("--csv-file", help="Path to a CSV file")
     p.add_argument("--os-id", help="os_id — required for a single record, or as a CSV default")
