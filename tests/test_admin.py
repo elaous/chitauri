@@ -138,7 +138,10 @@ def test_bulk_json_insert_enforces_row_limit(client, monkeypatch):
 
 
 def test_csv_bulk_import(client, store):
-    csv_text = f"os_id,device,release,verified_boot_key_sha256\ngrapheneos,Pixel 8,2026.09.01,{SHA}\n"
+    csv_text = (
+        "os_id,device,release,verified_boot_key_sha256\n"
+        f"grapheneos,Pixel 8,2026.09.01,{SHA}\n"
+    )
     resp = client.post(
         "/admin/verified-boot-keys/import",
         headers=AUTH,

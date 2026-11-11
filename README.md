@@ -99,7 +99,31 @@ By default the app connects to
 (matching `docker-compose.yml`). Override with a `DATABASE_URL` env var or a
 `.env` file, e.g. `DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db`.
 
-Run tests with `uv run pytest`.
+### Running tests
+
+```bash
+uv sync --group dev
+uv run pytest -q
+```
+
+Postgres-backed tests are skipped when no database is reachable; start one
+with `docker compose up -d postgres` to run them.
+
+### Configuration
+
+Settings are read from environment variables or a `.env` file
+(see `app/settings.py`):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `STORAGE_BACKEND` | `postgres` | `postgres` or `dynamodb` |
+| `DATABASE_URL` | local docker-compose Postgres | Postgres connection string |
+| `ADMIN_API_KEY` | unset | Enables `/admin/*` endpoints when set. It MUST be a long random value in any shared deployment. |
+| `RATE_LIMIT_NONCE`, `RATE_LIMIT_VERIFY`, `RATE_LIMIT_ADMIN` | `20/minute`, `20/minute`, `30/minute` | Per-client-IP rate limits |
+| `DYNAMODB_TABLE_PREFIX`, `DYNAMODB_REGION`, `DYNAMODB_ENDPOINT_URL` | see `app/settings.py` | DynamoDB backend only |
+
+The default database credentials in `docker-compose.yml` are for local
+development only and MUST NOT be used in a deployment.
 
 Full API reference (including the admin import endpoints and the
 DynamoDB alternative backend): [`docs/API.md`](docs/API.md). Machine-readable
@@ -136,7 +160,7 @@ touching the YAML file, see **Importing allowlist data** in
 
 ## Contributing
 
-See `CONTRIBUTING.md` for development setup and `CODE_OF_CONDUCT.md` for
+Issues and pull requests are welcome. See `CONTRIBUTING.md` for development setup and `CODE_OF_CONDUCT.md` for
 community guidelines. Found a security issue? See `SECURITY.md` instead of
 opening a public issue.
 

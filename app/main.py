@@ -104,7 +104,7 @@ async def verify(
         der_certs = [base64.b64decode(c) for c in req.cert_chain_b64]
         certs = [x509.load_der_x509_certificate(c) for c in der_certs]
     except Exception as e:
-        raise HTTPException(400, f"Invalid certificate chain: {e}")
+        raise HTTPException(400, f"Invalid certificate chain: {e}") from e
 
     chain_result = validate_chain(certs, PINNED_GOOGLE_ROOTS)
     if not chain_result.valid:
@@ -137,7 +137,8 @@ async def verify(
     if parsed.verified_boot_state_name != profile.expected_verified_boot_state:
         reasons.append(
             f"Unexpected verifiedBootState for {profile.display_name}: "
-            f"got {parsed.verified_boot_state_name}, expected {profile.expected_verified_boot_state}"
+            f"got {parsed.verified_boot_state_name}, "
+            f"expected {profile.expected_verified_boot_state}"
         )
 
     known_keys = {key.verified_boot_key_sha256 for key in profile.verified_boot_keys}

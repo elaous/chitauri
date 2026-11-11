@@ -72,7 +72,7 @@ async def _insert_grouped(
             received += len(keys)
             by_os_id[os_id] = await store.add_verified_boot_keys(os_id, keys)
     except ConfigValidationError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     return ImportResult(received=received, added=sum(by_os_id.values()), by_os_id=by_os_id)
 
 
@@ -96,7 +96,7 @@ async def add_verified_boot_key(
     try:
         grouped = group_by_os_id(parse_json_rows([key.model_dump()]))
     except ConfigValidationError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     return await _insert_grouped(store, grouped)
 
 
@@ -108,7 +108,7 @@ async def add_verified_boot_keys_bulk(
     try:
         grouped = group_by_os_id(parse_json_rows([k.model_dump() for k in keys]))
     except ConfigValidationError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     return await _insert_grouped(store, grouped)
 
 
@@ -131,7 +131,7 @@ async def import_verified_boot_keys_csv(
     try:
         rows = parse_csv_rows(content, default_os_id=default_os_id)
     except ConfigValidationError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     _max_rows_guard(len(rows))
     return await _insert_grouped(store, group_by_os_id(rows))
 
@@ -155,7 +155,7 @@ async def import_verified_boot_key_csv_row(
     try:
         rows = parse_csv_rows(body, default_os_id=default_os_id)
     except ConfigValidationError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     if len(rows) != 1:
         raise HTTPException(400, f"Expected exactly 1 data row, got {len(rows)}")
     return await _insert_grouped(store, group_by_os_id(rows))

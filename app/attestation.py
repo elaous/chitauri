@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from cryptography import x509
 from pyasn1.codec.der.decoder import decode as der_decode
-from pyasn1.type import char, constraint, namedtype, tag, univ
+from pyasn1.type import namedtype, tag, univ
 
 ATTESTATION_EXTENSION_OID = x509.ObjectIdentifier("1.3.6.1.4.1.11129.2.1.17")
 

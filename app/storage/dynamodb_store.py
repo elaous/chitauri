@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from functools import lru_cache, partial
+from functools import cache, partial
 from typing import Any
 
 import boto3
@@ -10,7 +10,7 @@ import boto3
 from app.storage.base import POLICY_TYPES, ConfigValidationError, OSProfileData, VerifiedBootKeyData
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_resource(region_name: str | None, endpoint_url: str | None):
     """Cached per (region, endpoint): resource construction is costly."""
     return boto3.resource("dynamodb", region_name=region_name, endpoint_url=endpoint_url)
