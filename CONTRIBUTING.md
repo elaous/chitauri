@@ -21,14 +21,18 @@ uv sync --group dev
 docker compose up -d postgres
 uv run alembic upgrade head
 uv run python scripts/seed_config.py
-uv run pytest
+uv run pytest -q
 ```
 
 See `README.md` for the full setup and `docs/API.md` for the API reference.
 
 ## Before opening a PR
 
-- Run `uv run pytest` and make sure it passes.
+- Run `uv run pytest -q` and make sure it passes. Postgres-backed tests are
+  skipped unless a database is reachable (`docker compose up -d postgres`).
+- CI runs only the tests related to your changed files on pull requests, via
+  `scripts/run_targeted_tests.py`; the full suite runs on `main` and nightly.
+  Run `python3 scripts/run_targeted_tests.py --dry-run <files>` to preview.
 - If you changed `app/db_models.py`, generate a migration:
   `uv run alembic revision --autogenerate -m "..."` and commit it.
 - If you changed the API surface, regenerate the schema:

@@ -18,9 +18,13 @@ find — they're valuable before the first real deployment, not just after.
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
 Instead, use GitHub's private vulnerability reporting for this repository
-(the "Report a vulnerability" button under the repo's Security tab). If
-that isn't available to you, open an issue asking a maintainer to contact
-you privately, without describing the vulnerability itself.
+(the "Report a vulnerability" button under the repo's Security tab, or
+<https://github.com/elaous/chitauri/security/advisories/new>). If that isn't
+available to you, open an issue asking the maintainer
+([@elaous](https://github.com/elaous)) to contact you privately, without
+describing the vulnerability itself.
+
+Only the latest commit on `main` is supported.
 
 Please include:
 

@@ -52,7 +52,8 @@ representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the maintainers listed in `SECURITY.md`. All complaints will be
+reported privately to the maintainer ([@elaous](https://github.com/elaous))
+through the channels described in `SECURITY.md`. All complaints will be
 reviewed and investigated promptly and fairly.
 
 ## Attribution
