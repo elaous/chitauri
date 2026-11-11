@@ -1,6 +1,6 @@
 # Security Policy
 
-graphene-attest verifies device integrity for relying parties (banks,
+chitauri verifies device integrity for relying parties (banks,
 government services) that may make trust decisions based on its verdicts.
 Treat any bypass of the verification logic, or any way to make the service
 issue a `pass` verdict for a device/OS that shouldn't get one, as a

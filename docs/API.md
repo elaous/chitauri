@@ -11,7 +11,7 @@ live docs at `/docs` (Swagger UI) / `/redoc` once the server is running.
 — `requestDetails` / `appIntegrity` / `deviceIntegrity` — so that a relying
 party migrating off (or alongside) Play Integrity can reuse most of its
 existing response-parsing code. Where this API checks something Play
-Integrity doesn't expose (verified boot key, OS patch level, etc.), those
+Integrity doesn't expose (verified boot key, OS patch level, etc.; the patch level is reported, not checked), those
 facts live in a `deviceAttestation` extension object instead of being
 shoehorned into the Play Integrity fields.
 
@@ -48,7 +48,7 @@ Request:
 for Play-Integrity-shaped parsers that expect the field to exist — this
 service doesn't itself attest app identity.
 
-Response (pass):
+Response (pass; no request can currently produce this, see README Status):
 
 ```json
 {
@@ -99,9 +99,30 @@ Response (fail) — `deviceIntegrity.deviceRecognitionVerdict` is empty and
 
 | Value | Meaning here |
 |---|---|
-| `MEETS_DEVICE_INTEGRITY` | Verified boot chain intact, signed by an allowlisted OS key |
+| `MEETS_DEVICE_INTEGRITY` | Certificate chain signatures and pinned-root check passed (a stub: no validity, revocation or path checks) and the verified boot key is in the OS allowlist |
 | `MEETS_STRONG_INTEGRITY` | Also backed by StrongBox, not just a TEE |
 | *(empty list)* | Failed one or more checks — see `deviceAttestation.reasons` |
+
+## Managing OS profiles
+
+`POST /admin/os-profiles` creates or updates an OS profile (same
+`X-Admin-Api-Key` auth as below). Keys can only be added to an existing
+profile. A request without the `X-Admin-Api-Key` header is rejected with
+422 because the header is declared required. Upserting an existing `id`
+updates its fields and preserves its existing verified boot keys.
+`expected_verified_boot_state` is an unvalidated string: a typo makes every
+verdict for that OS fail.
+
+```json
+{
+  "id": "grapheneos",
+  "display_name": "GrapheneOS",
+  "expected_verified_boot_state": "SelfSigned",
+  "require_device_locked": true
+}
+```
+
+Response: `{ "status": "ok", "id": "grapheneos" }`.
 
 ## Importing allowlist data
 

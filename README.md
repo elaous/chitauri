@@ -1,14 +1,17 @@
-# graphene-attest
+# chitauri
 
-An open-source, OS-neutral device integrity attestation API — the missing
-piece between Android's hardware Key Attestation and apps (banks, government
-services) that currently only trust Google's Play Integrity API.
+An OS-neutral device integrity attestation API built on Android hardware key attestation.
 
-It verifies hardware-signed attestation certificates directly from the
-device's TEE/StrongBox, and checks the boot state against a maintained
-allowlist of known-good OS signing keys — starting with GrapheneOS, extensible
-to any other AOSP-based OS that publishes its verified-boot key fingerprints
-(CalyxOS, LineageOS, /e/OS, etc).
+**Status: early scaffold. It cannot yet return a `pass` verdict (see Status). Do not use it to make trust decisions.**
+
+An open-source service intended as the missing piece between Android's
+hardware Key Attestation and apps (banks, government services) that
+currently only trust Google's Play Integrity API. It is intended to verify
+hardware-signed attestation certificates from the device's TEE/StrongBox and
+to check the boot state against an allowlist of known-good OS signing keys
+(currently empty), starting with GrapheneOS and extensible to any other
+AOSP-based OS that publishes its verified-boot key fingerprints (CalyxOS,
+LineageOS, /e/OS, etc).
 
 This does **not** use Play Integrity, Play Services, or any Google account.
 It uses the hardware attestation capability built into the Android Keystore,
@@ -26,38 +29,54 @@ for the technical and legal background.
 ## Architecture
 
 ```
-Device (GrapheneOS) --attestation cert chain--> API /verify --> signed verdict token
-                                                    |
+Device (GrapheneOS) --attestation cert chain--> API /verify --> Play-Integrity-shaped
+                                                    |           JSON verdict (token: null)
                                                     +-- allowlist of known
                                                     |   verifiedBootKey hashes
-                                                    |   (config/allowlist.yaml)
+                                                    |   (config store, seeded from
+                                                    |   config/allowlist.yaml)
                                                     +-- Google's hardware root
-                                                    |   certs (pinned)
-                                                    +-- Google's revocation
-                                                        list (synced, cached)
-                                                        https://android.googleapis.com/attestation/status
+                                                        certs (pinned; list is empty
+                                                        today, see Status)
+
+Not yet wired into /verify: Google's revocation list
+(https://android.googleapis.com/attestation/status, fetched and cached
+by app/revocation.py).
 ```
 
 Flow:
-1. Client requests a nonce: `POST /nonce`
+1. Client requests a single-use nonce (valid 5 minutes, held in process
+   memory): `POST /nonce`
 2. Client generates an attestation key with that nonce as the challenge,
    via Android Keystore, and sends the resulting cert chain: `POST /verify`
 3. Server:
-   - Validates the chain up to Google's hardware attestation root
-   - Checks the leaf key isn't in Google's revocation list
+   - Validates the chain signatures and that the root matches a pinned
+     Google hardware attestation root (the pinned list is currently empty,
+     so no chain can pass this check)
    - Parses the attestation extension (OID `1.3.6.1.4.1.11129.2.1.17`)
-   - Confirms `deviceLocked == true`
+   - Confirms `deviceLocked == true` when the OS profile sets
+     `require_device_locked` (both shipped profiles do)
    - Confirms `verifiedBootKey` hash is in the allowlist for the claimed OS
    - Confirms `verifiedBootState` matches what's expected for that OS
      (`SelfSigned` for GrapheneOS re-signed with a user key, `Verified` for
      stock/Google-certified builds)
-   - Confirms patch level is recent enough (policy-configurable)
-   - Issues a short-lived signed verdict token the relying party (bank, gov
-     app) can check
+   - Confirms the attestation challenge equals the issued nonce
+   - Returns a Play-Integrity-shaped JSON verdict (`pass` or `fail` with
+     reasons); the `token` field is always `null` because signed verdict
+     tokens are not implemented yet
+
+Not implemented yet: revocation-list checking in `/verify`, the
+`max_patch_age_days` patch-level policy, and signed verdict tokens. The
+`min_security_level` policy is only partly enforced (software-backed
+attestation is rejected; the TEE/StrongBox distinction is not).
 
 ## Status
 
-Early scaffold. The ASN.1 parsing in `app/attestation.py` implements the
+Early scaffold. The pinned Google root list in `app/main.py` is empty, so
+any request whose chain reaches validation fails the chain check, and no
+request can currently return `pass`.
+
+The ASN.1 parsing in `app/attestation.py` implements the
 fields documented at
 https://source.android.com/docs/security/keystore/attestation — but has
 **not yet been validated against real device output**. Google's own
@@ -76,7 +95,11 @@ attestation certificates from real GrapheneOS devices.**
 ## Setup
 
 Dependencies are managed with [uv](https://docs.astral.sh/uv/) and config
-(the OS allowlist + policy) lives in Postgres instead of a flat file.
+(the OS allowlist + policy) lives in Postgres (default) or DynamoDB instead
+of a flat file.
+
+Python 3.11+ is required. The service is a plain Python/FastAPI app and
+runs on any OS with Python and uv; the Postgres container needs Docker.
 
 ```bash
 # install uv if you don't have it: https://docs.astral.sh/uv/getting-started/installation/
@@ -104,6 +127,7 @@ By default the app connects to
 ```bash
 uv sync --group dev
 uv run pytest -q
+uv run ruff check .
 ```
 
 Postgres-backed tests are skipped when no database is reachable; start one
@@ -118,9 +142,10 @@ Settings are read from environment variables or a `.env` file
 | --- | --- | --- |
 | `STORAGE_BACKEND` | `postgres` | `postgres` or `dynamodb` |
 | `DATABASE_URL` | local docker-compose Postgres | Postgres connection string |
-| `ADMIN_API_KEY` | unset | Enables `/admin/*` endpoints when set. It MUST be a long random value in any shared deployment. |
+| `ADMIN_API_KEY` | unset | Enables `/admin/*` endpoints when set (sent as the `X-Admin-Api-Key` header). It MUST be a long random value in any shared deployment. |
+| `ADMIN_IMPORT_MAX_ROWS`, `ADMIN_IMPORT_MAX_FILE_BYTES` | `10000`, `10000000` | Limits for admin bulk and CSV imports |
 | `RATE_LIMIT_NONCE`, `RATE_LIMIT_VERIFY`, `RATE_LIMIT_ADMIN` | `20/minute`, `20/minute`, `30/minute` | Per-client-IP rate limits |
-| `DYNAMODB_TABLE_PREFIX`, `DYNAMODB_REGION`, `DYNAMODB_ENDPOINT_URL` | see `app/settings.py` | DynamoDB backend only |
+| `DYNAMODB_TABLE_PREFIX`, `DYNAMODB_REGION`, `DYNAMODB_ENDPOINT_URL` | `graphene_attest_`, unset, unset | DynamoDB backend only |
 
 The default database credentials in `docker-compose.yml` are for local
 development only and MUST NOT be used in a deployment.
@@ -140,7 +165,9 @@ a manual/scripted process against their release notes and repo. This is the
 main ongoing maintenance burden of running this service — see
 `docs/background.md`.
 
-`config/allowlist.yaml` is kept as human-editable seed data — edit it and
+`config/allowlist.yaml` ships with the `grapheneos` and `stock_android` OS
+profiles and no keys; until keys are added, every verdict for a leaf that
+has a rootOfTrust fails with an empty-allowlist reason. It is kept as human-editable seed data — edit it and
 re-run `uv run python scripts/seed_config.py` to sync it into the configured
 backend. For adding keys afterward (e.g. a new GrapheneOS release) without
 touching the YAML file, see **Importing allowlist data** in
@@ -150,8 +177,12 @@ touching the YAML file, see **Importing allowlist data** in
 
 - [ ] Validate ASN.1 parsing against real attestation samples (needs a real
       GrapheneOS device to generate test vectors)
+- [ ] Share the nonce store across processes (currently in-memory)
 - [ ] Automate allowlist updates from GrapheneOS release metadata
-- [ ] Add revocation list caching/sync job
+- [ ] Wire the revocation list check (`app/revocation.py`) into `/verify`
+- [ ] Load the pinned Google hardware attestation roots
+- [ ] Enforce the patch-level and minimum-security-level policies
+- [ ] Issue signed verdict tokens
 - [ ] Add policy engine (risk tiers instead of binary pass/fail)
 - [ ] Support additional OSes (CalyxOS, LineageOS+microG)
 - [ ] Client-side sample (Android) showing how to request a nonce and
