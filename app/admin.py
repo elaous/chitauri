@@ -144,7 +144,10 @@ async def import_verified_boot_key_csv_row(
     ),
     store: ConfigStore = Depends(get_store),
 ) -> ImportResult:
-    """Insert one verified-boot-key record from a raw CSV body."""
+    """Insert a single verified-boot-key record from a raw CSV body: a
+    header line (`os_id,device,release,verified_boot_key_sha256` — `os_id`
+    may be dropped if `default_os_id` is given) followed by exactly one
+    data row."""
     body = (await request.body()).decode("utf-8-sig").strip()
     if not body:
         raise HTTPException(400, "Empty request body")

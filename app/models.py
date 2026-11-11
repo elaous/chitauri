@@ -37,7 +37,8 @@ class DeviceIntegrity(BaseModel):
 
 
 class DeviceAttestationDetails(BaseModel):
-    """Project extension: hardware and OS facts from Key Attestation."""
+    """Extension beyond the Play Integrity shape: the hardware/OS facts this
+    project checks directly from the Key Attestation certificate."""
 
     os_id: str | None = None
     verdict: Literal["pass", "fail"]

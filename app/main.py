@@ -49,7 +49,7 @@ app.include_router(admin_router)
 _issued_nonces: dict[str, float] = {}
 _NONCE_TTL_SECONDS = 300
 
-PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []  # Empty: pinned roots are not loaded yet.
+PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []
 
 
 @app.post("/nonce", response_model=NonceResponse)
@@ -174,5 +174,5 @@ async def verify(
             os_patch_level=parsed.os_patch_level,
             security_level=parsed.security_level_name,
         ),
-        token=None,  # Token issuance not implemented; always None.
+        token=None,
     )

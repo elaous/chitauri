@@ -61,7 +61,6 @@ def _opt(name: str, tag_number: int, component=None):
 
 
 class AuthorizationList(univ.Sequence):
-    # Tag numbers per the Android attestation schema.
     componentType = namedtype.NamedTypes(
         _opt("purpose", 1, univ.SetOf(componentType=univ.Integer())),
         _opt("algorithm", 2),
