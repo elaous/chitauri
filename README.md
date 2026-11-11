@@ -2,14 +2,16 @@
 
 An OS-neutral device integrity attestation API built on Android hardware key attestation.
 
-An open-source service — the missing piece between Android's hardware Key
-Attestation and apps (banks, government services) that currently only trust Google's Play Integrity API.
+**Status: early scaffold. It cannot yet return a `pass` verdict (see Status). Do not use it to make trust decisions.**
 
-It verifies hardware-signed attestation certificates directly from the
-device's TEE/StrongBox, and checks the boot state against a maintained
-allowlist of known-good OS signing keys — starting with GrapheneOS, extensible
-to any other AOSP-based OS that publishes its verified-boot key fingerprints
-(CalyxOS, LineageOS, /e/OS, etc).
+An open-source service intended as the missing piece between Android's
+hardware Key Attestation and apps (banks, government services) that
+currently only trust Google's Play Integrity API. It is intended to verify
+hardware-signed attestation certificates from the device's TEE/StrongBox and
+to check the boot state against an allowlist of known-good OS signing keys
+(currently empty), starting with GrapheneOS and extensible to any other
+AOSP-based OS that publishes its verified-boot key fingerprints (CalyxOS,
+LineageOS, /e/OS, etc).
 
 This does **not** use Play Integrity, Play Services, or any Google account.
 It uses the hardware attestation capability built into the Android Keystore,
@@ -50,9 +52,10 @@ Flow:
 3. Server:
    - Validates the chain signatures and that the root matches a pinned
      Google hardware attestation root (the pinned list is currently empty,
-     so this check always fails)
+     so no chain can pass this check)
    - Parses the attestation extension (OID `1.3.6.1.4.1.11129.2.1.17`)
-   - Confirms `deviceLocked == true`
+   - Confirms `deviceLocked == true` when the OS profile sets
+     `require_device_locked` (both shipped profiles do)
    - Confirms `verifiedBootKey` hash is in the allowlist for the claimed OS
    - Confirms `verifiedBootState` matches what's expected for that OS
      (`SelfSigned` for GrapheneOS re-signed with a user key, `Verified` for
@@ -70,7 +73,10 @@ attestation is rejected; the TEE/StrongBox distinction is not).
 ## Status
 
 Early scaffold. The pinned Google root list in `app/main.py` is empty, so
-`/verify` currently reports a chain failure for every request. The ASN.1 parsing in `app/attestation.py` implements the
+any request whose chain reaches validation fails the chain check, and no
+request can currently return `pass`.
+
+The ASN.1 parsing in `app/attestation.py` implements the
 fields documented at
 https://source.android.com/docs/security/keystore/attestation — but has
 **not yet been validated against real device output**. Google's own
@@ -160,8 +166,8 @@ main ongoing maintenance burden of running this service — see
 `docs/background.md`.
 
 `config/allowlist.yaml` ships with the `grapheneos` and `stock_android` OS
-profiles and no keys; until keys are added, every verdict fails with an
-empty-allowlist reason. It is kept as human-editable seed data — edit it and
+profiles and no keys; until keys are added, every verdict for a leaf that
+has a rootOfTrust fails with an empty-allowlist reason. It is kept as human-editable seed data — edit it and
 re-run `uv run python scripts/seed_config.py` to sync it into the configured
 backend. For adding keys afterward (e.g. a new GrapheneOS release) without
 touching the YAML file, see **Importing allowlist data** in
