@@ -1,4 +1,4 @@
-# Contributing to graphene-attest
+# Contributing to chitauri
 
 Thanks for considering a contribution. This project is early-stage and the
 most valuable contributions right now are:
@@ -11,7 +11,7 @@ most valuable contributions right now are:
   independently verified the hash (see `config/allowlist.yaml` and
   `docs/API.md#importing-allowlist-data`).
 - Chain validation hardening (`app/chain.py` is an intentionally minimal
-  stub — see the TODOs at the top of that file).
+  stub that checks signatures and the root pin only).
 - Bug reports and fixes against real device output.
 
 ## Development setup

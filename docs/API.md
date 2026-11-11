@@ -103,6 +103,23 @@ Response (fail) — `deviceIntegrity.deviceRecognitionVerdict` is empty and
 | `MEETS_STRONG_INTEGRITY` | Also backed by StrongBox, not just a TEE |
 | *(empty list)* | Failed one or more checks — see `deviceAttestation.reasons` |
 
+## Managing OS profiles
+
+`POST /admin/os-profiles` creates or updates an OS profile (same
+`X-Admin-Api-Key` auth as below). Keys can only be added to an existing
+profile.
+
+```json
+{
+  "id": "grapheneos",
+  "display_name": "GrapheneOS",
+  "expected_verified_boot_state": "SelfSigned",
+  "require_device_locked": true
+}
+```
+
+Response: `{ "status": "ok", "id": "grapheneos" }`.
+
 ## Importing allowlist data
 
 The allowlist (`verified_boot_keys`, one row per OS + device + release) can
