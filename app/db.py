@@ -1,4 +1,4 @@
-"""Async SQLAlchemy engine/session setup for the Postgres-backed config store."""
+"""Async SQLAlchemy engine and session setup."""
 from __future__ import annotations
 
 from collections.abc import AsyncIterator

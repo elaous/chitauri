@@ -1,5 +1,4 @@
-"""Verifies the slowapi wiring actually rejects requests over the
-configured limit — not just that the decorator is present."""
+"""Verifies slowapi rejects requests over the configured limit."""
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

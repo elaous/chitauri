@@ -8,7 +8,7 @@ from app.storage.base import ConfigStore
 
 
 async def get_store() -> AsyncIterator[ConfigStore]:
-    """FastAPI dependency yielding a ConfigStore for the configured backend."""
+    """FastAPI dependency yielding the configured ConfigStore."""
     if settings.storage_backend == "dynamodb":
         from app.storage.dynamodb_store import DynamoDBConfigStore
 

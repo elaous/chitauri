@@ -1,25 +1,4 @@
-"""Admin endpoints for managing the allowlist/policy config.
-
-Four ways to insert verified_boot_keys, covering single/bulk x JSON/CSV:
-
-  POST /admin/verified-boot-keys              single record, JSON body
-  POST /admin/verified-boot-keys/bulk         many records, JSON array body
-  POST /admin/verified-boot-keys/import       many records, multipart CSV file
-  POST /admin/verified-boot-keys/import/row   single record, raw CSV body (one line)
-
-All of these (and the os-profile endpoints) require the `X-Admin-Api-Key`
-header to match `settings.admin_api_key`. The admin API is disabled
-entirely (503) if that setting is unset — there is no default key.
-
-All of these are also rate-limited per client IP (`settings.rate_limit_admin`,
-shared across the whole admin surface), as defense in depth against a
-leaked/guessed key. The rate-limit dependency is listed *before*
-`require_admin` in each route's `dependencies=[...]` so a request is counted
-even when auth then rejects it — otherwise brute-forcing the admin key
-would never trip the limiter, since FastAPI only calls the limiter's usual
-`@limiter.limit`-decorated endpoint body after every dependency has already
-succeeded (see app/rate_limit.py).
-"""
+"""Admin endpoints for managing the allowlist/policy config."""
 from __future__ import annotations
 
 import secrets
@@ -43,6 +22,7 @@ async def require_admin(x_admin_api_key: str = Header(...)) -> None:
 
 
 def _admin_dependencies() -> list:
+    # Rate limit must precede auth so failed auth attempts are counted.
     return [
         Depends(enforce(settings.rate_limit_admin, scope="admin")),
         Depends(require_admin),
@@ -80,13 +60,7 @@ def _max_rows_guard(n: int) -> None:
 async def _insert_grouped(
     store: ConfigStore, grouped: dict[str, list]
 ) -> ImportResult:
-    # Check every os_id exists *before* writing any of them. A batch can
-    # span multiple os_ids (e.g. a CSV covering several OSes); without this,
-    # one os_id past the real ones already written would leave those writes
-    # persisted even though the whole request reports a single 400 — each
-    # add_verified_boot_keys() call commits independently (see
-    # PostgresConfigStore/DynamoDBConfigStore), so there's no overall
-    # transaction to roll back.
+    # Validate all os_ids first: writes commit per call, no rollback.
     for os_id in grouped:
         if await store.get_os_profile(os_id) is None:
             raise HTTPException(400, f"Unknown os_id {os_id!r}")
@@ -146,12 +120,7 @@ async def import_verified_boot_keys_csv(
     ),
     store: ConfigStore = Depends(get_store),
 ) -> ImportResult:
-    # Starlette has already fully spooled the multipart body to construct
-    # `file` by the time this handler runs (FastAPI parses the whole form
-    # before calling the endpoint), so this doesn't avoid buffering an
-    # oversized upload — it only stops us going on to parse/insert rows
-    # from one. A real "reject before buffering" guard would need to check
-    # Content-Length ahead of form parsing (e.g. in middleware).
+    # Upload is fully buffered before this size check.
     if file.size is not None and file.size > settings.admin_import_max_file_bytes:
         raise HTTPException(
             413,

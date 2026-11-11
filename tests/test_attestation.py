@@ -1,22 +1,4 @@
-"""
-Tests the ASN.1 schema/decoder against a SYNTHETIC KeyDescription structure
-(not a real device certificate — see the note on real fixtures below).
-
-pyasn1 pitfall this file works around: `.subtype(explicitTag=...)` on an
-already-*populated* value resets its content instead of re-tagging it. The
-fix used below is to clone the field's own tagged schema template (taken
-straight from the parent Sequence's componentType) and populate that clone,
-which preserves both the tag and the content. This only matters for
-constructing synthetic test values — real certificate parsing only decodes,
-via `der_decode(..., asn1Spec=KeyDescription())`, and never hits this.
-
-To test against a REAL device certificate instead of this synthetic one:
-  1. Run a small Android app (or reference GrapheneOS's Auditor source) that
-     calls KeyGenParameterSpec.Builder(...).setAttestationChallenge(...) and
-     exports the resulting certificate chain.
-  2. Save the leaf cert as DER bytes into tests/fixtures/leaf.der
-  3. Un-skip test_parse_real_fixture below.
-"""
+"""Synthetic KeyDescription round-trip tests. Not real device data."""
 import pathlib
 
 import pytest
@@ -34,8 +16,7 @@ FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "leaf.der"
 
 
 def _tagged_field(container_cls, field_name: str):
-    """Return a fresh, correctly-tagged, empty instance for `field_name` on
-    `container_cls`, ready to populate — see module docstring."""
+    """Clone the tagged template; re-tagging a populated value resets it."""
     return container_cls().componentType[field_name].asn1Object.clone()
 
 

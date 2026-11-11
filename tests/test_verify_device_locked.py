@@ -1,14 +1,4 @@
-"""Regression test for a bug caught in review: app/main.py's /verify handler
-used to check `parsed.device_locked` unconditionally, ignoring
-OSProfileData.require_device_locked entirely — so setting
-require_device_locked=False for a profile (e.g. an OS that legitimately
-ships unlockable) had no effect; every attestation for it still failed the
-bootloader-locked check.
-
-These tests bypass real certificate parsing/chain validation (covered by
-tests/test_attestation.py and app/chain.py's own stub status) to isolate
-just that one policy branch in app/main.verify().
-"""
+"""Regression: /verify must honor require_device_locked=False."""
 from __future__ import annotations
 
 import base64

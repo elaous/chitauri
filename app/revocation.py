@@ -1,12 +1,4 @@
-"""
-Fetches and caches Google's Android hardware attestation key revocation
-status list. See:
-https://security.googleblog.com/2019/09/trust-but-verify-attestation-with.html
-
-The list is JSON: {"entries": {"<serial-hex>": {"status": "REVOKED"|"SUSPENDED", "reason": "..."}}}
-Only non-valid keys are listed, so absence means "not known to be revoked" —
-not a positive guarantee, just the best signal Google publishes.
-"""
+"""Fetches and caches Google's hardware attestation revocation list."""
 from __future__ import annotations
 
 import time
@@ -38,9 +30,7 @@ def get_revocation_list(force_refresh: bool = False) -> dict:
 
 
 def is_revoked(serial_number_hex: str) -> tuple[bool, str | None]:
-    """serial_number_hex should be lowercase, no leading zeros stripped oddly —
-    match Google's format exactly; verify against a real response before
-    trusting this in production."""
+    """Absence from the list means not known revoked, not valid."""
     data = get_revocation_list()
     entry = data.get("entries", {}).get(serial_number_hex.lower())
     if entry is None:

@@ -1,23 +1,4 @@
-"""CLI for inserting verified_boot_keys directly into the configured
-ConfigStore — for operators with direct DB/AWS access who'd rather not go
-through the HTTP admin API. Supports the same four shapes as app/admin.py:
-single/bulk x JSON/CSV.
-
-Examples:
-
-    # single record
-    uv run python scripts/import_verified_boot_keys.py \\
-        --os-id grapheneos --sha256 <64 hex chars> --device "Pixel 8" --release 2026.09.01
-
-    # bulk from a JSON file (array of {os_id, device, release, verified_boot_key_sha256})
-    uv run python scripts/import_verified_boot_keys.py --json-file keys.json
-
-    # bulk from a CSV file (columns: os_id,device,release,verified_boot_key_sha256)
-    uv run python scripts/import_verified_boot_keys.py --csv-file keys.csv
-
-    # CSV without an os_id column, applied to one OS
-    uv run python scripts/import_verified_boot_keys.py --csv-file keys.csv --os-id grapheneos
-"""
+"""CLI for inserting verified-boot keys directly into the ConfigStore."""
 from __future__ import annotations
 
 import argparse

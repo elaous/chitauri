@@ -14,19 +14,8 @@ class VerifyRequest(BaseModel):
     claimed_os: str = Field(description="e.g. 'grapheneos' or 'stock_android'")
     # DER-encoded X.509 certs, base64, leaf-first
     cert_chain_b64: list[str]
-    # Optional, echoed back in requestDetails.requestPackageName — this
-    # service doesn't itself check app identity, but relying parties
-    # migrating from Play Integrity often want it round-tripped.
+    # Optional; echoed as requestDetails.requestPackageName, not verified.
     request_package_name: str | None = None
-
-
-# --- Response shape ---
-#
-# Shaped to match Google's Play Integrity decoded verdict token
-# (https://developer.android.com/google/play/integrity/verdict) so a relying
-# party migrating off Play Integrity can reuse most of its existing parsing
-# code. `deviceAttestation` is this project's own extension carrying the
-# hardware/OS facts Play Integrity doesn't expose.
 
 
 class RequestDetails(BaseModel):
@@ -36,17 +25,12 @@ class RequestDetails(BaseModel):
 
 
 class AppIntegrity(BaseModel):
-    # This service doesn't attest app identity/licensing (no Play Store
-    # involved), so this is always UNEVALUATED — kept only for shape
-    # compatibility with Play Integrity response parsers.
+    # Always UNEVALUATED. Kept for Play Integrity parser compatibility.
     appRecognitionVerdict: Literal["UNEVALUATED"] = "UNEVALUATED"
 
 
 class DeviceIntegrity(BaseModel):
-    # Subset of Play Integrity's verdicts that map onto hardware Key
-    # Attestation: MEETS_DEVICE_INTEGRITY (verified boot chain intact, on an
-    # allowlisted OS key) and MEETS_STRONG_INTEGRITY (backed by StrongBox,
-    # not just a TEE). Empty means the device failed every check.
+    # Empty list means the device failed every check.
     deviceRecognitionVerdict: list[
         Literal["MEETS_DEVICE_INTEGRITY", "MEETS_STRONG_INTEGRITY"]
     ] = Field(default_factory=list)
@@ -70,5 +54,5 @@ class VerifyResult(BaseModel):
     appIntegrity: AppIntegrity
     deviceIntegrity: DeviceIntegrity
     deviceAttestation: DeviceAttestationDetails
-    # short-lived signed token a relying party can check, only set on pass
+    # Set only on pass.
     token: str | None = None

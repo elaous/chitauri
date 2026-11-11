@@ -1,11 +1,4 @@
-"""Exercises PostgresConfigStore against a real, disposable Postgres database.
-
-Uses a separate `<configured db>_test` database (created and dropped around
-the test run) rather than the dev database `DATABASE_URL` points at, so
-running tests never touches data managed by `alembic upgrade head` /
-`scripts/seed_config.py`. Skipped automatically if Postgres isn't reachable
-or the test account can't create databases.
-"""
+"""PostgresConfigStore tests against a disposable Postgres test database."""
 from __future__ import annotations
 
 from urllib.parse import urlsplit, urlunsplit

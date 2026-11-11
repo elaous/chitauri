@@ -1,5 +1,4 @@
-"""In-memory ConfigStore for exercising app.main/app.admin without a real
-Postgres/DynamoDB backend."""
+"""In-memory ConfigStore for app.main and app.admin tests."""
 from __future__ import annotations
 
 from app.storage.base import ConfigValidationError, OSProfileData, VerifiedBootKeyData
