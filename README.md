@@ -49,6 +49,8 @@ Flow:
    memory, so it does not work across multiple workers): `POST /nonce`
 2. Client generates an attestation key with that nonce as the challenge,
    via Android Keystore, and sends the resulting cert chain: `POST /verify`
+   (`cert_chain_b64` elements MUST be standard-alphabet base64 with no
+   newlines or whitespace; URL-safe or line-wrapped input is rejected with 400)
 3. Server:
    - Validates the chain signatures and that the root matches a pinned
      Google hardware attestation root (the pinned list is currently empty,

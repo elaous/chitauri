@@ -4,6 +4,7 @@ import base64
 import hashlib
 import logging
 import secrets
+import threading
 import time
 
 from cryptography import x509
@@ -48,6 +49,7 @@ app.include_router(admin_router)
 
 # In-memory nonce store: single process only.
 _issued_nonces: dict[str, float] = {}
+_nonce_lock = threading.Lock()
 _NONCE_TTL_SECONDS = 300
 _MAX_OUTSTANDING_NONCES = 10_000
 
@@ -65,18 +67,23 @@ PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []
 @app.post("/nonce", response_model=NonceResponse)
 @limiter.limit(settings.rate_limit_nonce)
 def issue_nonce(request: Request) -> NonceResponse:
-    _purge_expired_nonces()
-    while len(_issued_nonces) >= _MAX_OUTSTANDING_NONCES:
-        del _issued_nonces[next(iter(_issued_nonces))]
     nonce = secrets.token_urlsafe(24)
-    _issued_nonces[nonce] = time.time()
+    _register_nonce(nonce)
     return NonceResponse(nonce=nonce)
+
+
+def _register_nonce(nonce: str) -> None:
+    with _nonce_lock:
+        _purge_expired_nonces()
+        while len(_issued_nonces) >= _MAX_OUTSTANDING_NONCES:
+            _issued_nonces.pop(next(iter(_issued_nonces)), None)
+        _issued_nonces[nonce] = time.time()
 
 
 def _purge_expired_nonces() -> None:
     cutoff = time.time() - _NONCE_TTL_SECONDS
     for nonce in [n for n, issued_at in _issued_nonces.items() if issued_at < cutoff]:
-        del _issued_nonces[nonce]
+        _issued_nonces.pop(nonce, None)
 
 
 def _security_level_too_low(level: int, minimum_name: str) -> bool:
@@ -87,7 +94,8 @@ def _security_level_too_low(level: int, minimum_name: str) -> bool:
 
 
 def _consume_nonce(nonce: str) -> bool:
-    issued_at = _issued_nonces.pop(nonce, None)
+    with _nonce_lock:
+        issued_at = _issued_nonces.pop(nonce, None)
     if issued_at is None:
         return False
     return (time.time() - issued_at) <= _NONCE_TTL_SECONDS

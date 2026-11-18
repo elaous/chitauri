@@ -77,3 +77,21 @@ def test_malformed_cert_returns_generic_error(client, bad):
     resp = _verify(client, [bad])
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Invalid certificate chain"
+
+
+def test_concurrent_register_and_consume_keep_cap_without_errors(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+
+    monkeypatch.setattr(main, "_MAX_OUTSTANDING_NONCES", 5)
+
+    def hammer(worker: int) -> None:
+        for i in range(500):
+            nonce = f"{worker}-{i}"
+            main._register_nonce(nonce)
+            assert len(main._issued_nonces) <= 5
+            main._consume_nonce(nonce)
+
+    with ThreadPoolExecutor(8) as pool:
+        for future in [pool.submit(hammer, w) for w in range(8)]:
+            future.result()
+    assert len(main._issued_nonces) <= 5
