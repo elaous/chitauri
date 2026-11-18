@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+MIN_ADMIN_API_KEY_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -27,6 +30,15 @@ class Settings(BaseSettings):
     rate_limit_nonce: str = "20/minute"
     rate_limit_verify: str = "20/minute"
     rate_limit_admin: str = "30/minute"
+
+    @field_validator("admin_api_key")
+    @classmethod
+    def _admin_api_key_long_enough(cls, value: str | None) -> str | None:
+        if value and len(value) < MIN_ADMIN_API_KEY_LENGTH:
+            raise ValueError(
+                f"ADMIN_API_KEY must be at least {MIN_ADMIN_API_KEY_LENGTH} characters"
+            )
+        return value
 
 
 settings = Settings()

@@ -46,9 +46,11 @@ by app/revocation.py).
 
 Flow:
 1. Client requests a single-use nonce (valid 5 minutes, held in process
-   memory): `POST /nonce`
+   memory, so it does not work across multiple workers): `POST /nonce`
 2. Client generates an attestation key with that nonce as the challenge,
    via Android Keystore, and sends the resulting cert chain: `POST /verify`
+   (`cert_chain_b64` elements MUST be standard-alphabet base64 with no
+   newlines or whitespace; URL-safe or line-wrapped input is rejected with 400)
 3. Server:
    - Validates the chain signatures and that the root matches a pinned
      Google hardware attestation root (the pinned list is currently empty,
@@ -67,8 +69,9 @@ Flow:
 
 Not implemented yet: revocation-list checking in `/verify`, the
 `max_patch_age_days` patch-level policy, and signed verdict tokens. The
-`min_security_level` policy is only partly enforced (software-backed
-attestation is rejected; the TEE/StrongBox distinction is not).
+`min_security_level` policy compares the attestation security level
+(Software < TrustedEnvironment < StrongBox); `keymasterSecurityLevel` is
+not checked.
 
 ## Status
 
@@ -142,7 +145,7 @@ Settings are read from environment variables or a `.env` file
 | --- | --- | --- |
 | `STORAGE_BACKEND` | `postgres` | `postgres` or `dynamodb` |
 | `DATABASE_URL` | local docker-compose Postgres | Postgres connection string |
-| `ADMIN_API_KEY` | unset | Enables `/admin/*` endpoints when set (sent as the `X-Admin-Api-Key` header). It MUST be a long random value in any shared deployment. |
+| `ADMIN_API_KEY` | unset | Enables `/admin/*` endpoints when set (sent as the `X-Admin-Api-Key` header). It MUST be a random value of at least 32 characters; startup fails otherwise. |
 | `ADMIN_IMPORT_MAX_ROWS`, `ADMIN_IMPORT_MAX_FILE_BYTES` | `10000`, `10000000` | Limits for admin bulk and CSV imports |
 | `RATE_LIMIT_NONCE`, `RATE_LIMIT_VERIFY`, `RATE_LIMIT_ADMIN` | `20/minute`, `20/minute`, `30/minute` | Per-client-IP rate limits |
 | `DYNAMODB_TABLE_PREFIX`, `DYNAMODB_REGION`, `DYNAMODB_ENDPOINT_URL` | `graphene_attest_`, unset, unset | DynamoDB backend only |

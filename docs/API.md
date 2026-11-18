@@ -44,6 +44,9 @@ Request:
 }
 ```
 
+`cert_chain_b64` elements MUST be standard-alphabet base64 with no newlines or
+whitespace; URL-safe or line-wrapped input is rejected with 400.
+
 `request_package_name` is optional and purely echoed back in the response
 for Play-Integrity-shaped parsers that expect the field to exist — this
 service doesn't itself attest app identity.
