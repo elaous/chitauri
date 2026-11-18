@@ -201,3 +201,31 @@ def test_upsert_os_profile(client, store):
     )
     assert resp.status_code == 200, resp.text
     assert "calyxos" in store.profiles
+
+
+def test_non_ascii_admin_key_is_unauthorized_not_error(client):
+    resp = client.post(
+        "/admin/os-profiles",
+        content=b'{"id":"x","display_name":"X","expected_verified_boot_state":"Verified"}',
+        headers={
+            "X-Admin-Api-Key": b"k\xe9y",
+            "Content-Type": "application/json",
+        },
+    )
+    assert resp.status_code == 401
+
+
+def test_short_admin_api_key_rejected_at_startup():
+    from pydantic import ValidationError
+
+    from app.settings import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(admin_api_key="short")
+
+
+def test_long_admin_api_key_and_unset_are_accepted():
+    from app.settings import Settings
+
+    assert Settings(admin_api_key="x" * 32).admin_api_key == "x" * 32
+    assert Settings(admin_api_key=None).admin_api_key is None

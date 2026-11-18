@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import secrets
 import time
 
@@ -12,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.admin import router as admin_router
-from app.attestation import AttestationParseError, parse_leaf_certificate
+from app.attestation import AttestationParseError, SecurityLevel, parse_leaf_certificate
 from app.chain import validate_chain
 from app.models import (
     AppIntegrity,
@@ -48,6 +49,15 @@ app.include_router(admin_router)
 # In-memory nonce store: single process only.
 _issued_nonces: dict[str, float] = {}
 _NONCE_TTL_SECONDS = 300
+_MAX_OUTSTANDING_NONCES = 10_000
+
+MAX_CERT_CHAIN_LENGTH = 6
+MAX_CERT_B64_LENGTH = 8192
+
+DEFAULT_MIN_SECURITY_LEVEL = "TrustedEnvironment"
+_SECURITY_LEVEL_RANKS = {name: rank for rank, name in SecurityLevel.NAMES.items()}
+
+logger = logging.getLogger(__name__)
 
 PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []
 
@@ -55,9 +65,25 @@ PINNED_GOOGLE_ROOTS: list[x509.Certificate] = []
 @app.post("/nonce", response_model=NonceResponse)
 @limiter.limit(settings.rate_limit_nonce)
 def issue_nonce(request: Request) -> NonceResponse:
+    _purge_expired_nonces()
+    while len(_issued_nonces) >= _MAX_OUTSTANDING_NONCES:
+        del _issued_nonces[next(iter(_issued_nonces))]
     nonce = secrets.token_urlsafe(24)
     _issued_nonces[nonce] = time.time()
     return NonceResponse(nonce=nonce)
+
+
+def _purge_expired_nonces() -> None:
+    cutoff = time.time() - _NONCE_TTL_SECONDS
+    for nonce in [n for n, issued_at in _issued_nonces.items() if issued_at < cutoff]:
+        del _issued_nonces[nonce]
+
+
+def _security_level_too_low(level: int, minimum_name: str) -> bool:
+    minimum_rank = _SECURITY_LEVEL_RANKS.get(minimum_name)
+    if minimum_rank is None or level not in SecurityLevel.NAMES:
+        return True
+    return level < minimum_rank
 
 
 def _consume_nonce(nonce: str) -> bool:
@@ -100,11 +126,17 @@ async def verify(
     if not req.cert_chain_b64:
         raise HTTPException(400, "cert_chain_b64 must not be empty")
 
+    if len(req.cert_chain_b64) > MAX_CERT_CHAIN_LENGTH:
+        raise HTTPException(400, "Certificate chain too long")
+    if any(len(c) > MAX_CERT_B64_LENGTH for c in req.cert_chain_b64):
+        raise HTTPException(400, "Certificate too large")
+
     try:
-        der_certs = [base64.b64decode(c) for c in req.cert_chain_b64]
+        der_certs = [base64.b64decode(c, validate=True) for c in req.cert_chain_b64]
         certs = [x509.load_der_x509_certificate(c) for c in der_certs]
     except Exception as e:
-        raise HTTPException(400, f"Invalid certificate chain: {e}") from e
+        logger.warning("Rejected malformed certificate chain: %s", type(e).__name__)
+        raise HTTPException(400, "Invalid certificate chain") from e
 
     chain_result = validate_chain(certs, PINNED_GOOGLE_ROOTS)
     if not chain_result.valid:
@@ -126,9 +158,8 @@ async def verify(
         reasons.append("Attestation challenge does not match issued nonce")
 
     policy = await store.get_policy()
-    if parsed.security_level_name != policy.get("min_security_level", "TrustedEnvironment") and (
-        parsed.attestation_security_level < 1
-    ):
+    min_security_level = policy.get("min_security_level", DEFAULT_MIN_SECURITY_LEVEL)
+    if _security_level_too_low(parsed.attestation_security_level, min_security_level):
         reasons.append(f"Security level too low: {parsed.security_level_name}")
 
     if profile.require_device_locked and parsed.device_locked is not True:

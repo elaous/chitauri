@@ -17,7 +17,9 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def require_admin(x_admin_api_key: str = Header(...)) -> None:
     if not settings.admin_api_key:
         raise HTTPException(503, "Admin API is disabled (ADMIN_API_KEY is not set)")
-    if not secrets.compare_digest(x_admin_api_key, settings.admin_api_key):
+    if not secrets.compare_digest(
+        x_admin_api_key.encode("utf-8"), settings.admin_api_key.encode("utf-8")
+    ):
         raise HTTPException(401, "Invalid admin API key")
 
 
